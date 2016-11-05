@@ -1,0 +1,18 @@
+# Location data
+# Two possible formats:
+#
+# location_name, latitude degrees, minutes, seconds, longitude degrees, minutes, seconds
+# location_name, latitude in degrees, longitude in degrees
+# 
+# To disable a location, simply add a # to the beginning of the line
+
+cape_town, -33.9249, 18.4241
+perth, -31.9505, 115.8605
+rio, -22.9068, -43.1729
+
+# testing
+#a, 90, 0
+#b, 45, 0
+#c, 0, 0
+#d, -45, 0
+#e, -90, 0

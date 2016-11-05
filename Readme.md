@@ -22,7 +22,9 @@ List available commands:
 ## FAQ
 
 Q: Do you believe the earth is flat?
+
 A: No, idiot.
 
 Q: Then why... ?
+
 A: Because I felt like it. Shut up.

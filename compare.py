@@ -62,8 +62,8 @@ class App(cmd.Cmd):
                 if self.verbose:
                     print("\t\t\tBase Ray Direction:  "+str(flat_star.base_ray_direction()))
                     print("\t\t\tLocal Ray Direction: "+str(flat_star.local_ray_direction(location, self.gmst)))
-                    print("\t\t\tCelstial Shell Intersept: "+str(flat_star.shell_intercept(flat_location, self.gmst, self.celestial_shell_radius)))
-                    print("\t\t\tCelstial Shell Radius: "+str(flat_star.shell_intercept(flat_location, self.gmst, self.celestial_shell_radius).length()))
+                    print("\t\t\tCelestial Shell Intercept: "+str(flat_star.shell_intercept(flat_location, self.gmst, self.celestial_shell_radius)))
+                    print("\t\t\tCelestial Shell Radius: "+str(flat_star.shell_intercept(flat_location, self.gmst, self.celestial_shell_radius).length()))
                     print("\t\t\tDistance: "+str(flat_star.distance(flat_location, self.gmst, self.celestial_shell_radius)))
 
             print("\n")

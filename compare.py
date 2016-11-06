@@ -14,7 +14,7 @@ import cmd
 from datetime import datetime
 
 DEFAULT_GMST = gmst(datetime.now(utc))
-DEFAULT_CELESTIAL_SPHERE_RADIUS = 400080000 # meters (default is ten times bigger than earth radius)
+DEFAULT_CELESTIAL_SHELL_RADIUS = 400080000 # meters (default is ten times bigger than earth radius)
 
 
 class App(cmd.Cmd):
@@ -36,7 +36,7 @@ class App(cmd.Cmd):
         self.selected_locations = self.locations
         self.gmst = DEFAULT_GMST
         self.verbose = False
-        self.celestial_sphere_radius = DEFAULT_CELESTIAL_SPHERE_RADIUS
+        self.celestial_shell_radius = DEFAULT_CELESTIAL_SHELL_RADIUS
 
     def do_go(self, arg):
         'Run the comparison of selected stars and locations.'
@@ -45,12 +45,13 @@ class App(cmd.Cmd):
 
         for name, location in self.selected_locations.items():
             print(name+":")
+            flat_location = flat.Location(location.lat, location.lon)
             if self.verbose:
                 print("Lat/Lon: "+location.lat.lat()+"/"+location.lon.lon())
+                print("Location Vector: "+str(flat_location.vector(self.gmst)))
             for name, star in self.selected_stars.items():
                 globe_star = globe.Star(star.ra, star.dec)
                 flat_star = flat.Star(star.ra, star.dec)
-                flat_location = flat.Location(location.lat, location.lon)
                 print("\t"+name+":")
                 if self.verbose:
                     print("\tRA/Dec: "+globe_star.ra.hour()+"/"+globe_star.dec.deg_min_sec())
@@ -61,7 +62,9 @@ class App(cmd.Cmd):
                 if self.verbose:
                     print("\t\t\tBase Ray Direction:  "+str(flat_star.base_ray_direction()))
                     print("\t\t\tLocal Ray Direction: "+str(flat_star.local_ray_direction(location, self.gmst)))
-                    print("\t\t\tCelstial Sphere Intersept: "+str(flat_star.sphere_intercept(flat_location, self.gmst, self.celestial_sphere_radius)))
+                    print("\t\t\tCelstial Shell Intersept: "+str(flat_star.shell_intercept(flat_location, self.gmst, self.celestial_shell_radius)))
+                    print("\t\t\tCelstial Shell Radius: "+str(flat_star.shell_intercept(flat_location, self.gmst, self.celestial_shell_radius).length()))
+                    print("\t\t\tDistance: "+str(flat_star.distance(flat_location, self.gmst, self.celestial_shell_radius)))
 
             print("\n")
 
@@ -100,19 +103,19 @@ class App(cmd.Cmd):
         return [i for i in self.locations.keys() if i.startswith(text)]
 
     def do_radius(self, arg):
-        'Radius of the celestial sphere. Must be number greater than 40,008,000 meters'
+        'Radius of the celestial shell. Must be number greater than 40,008,000 meters'
         if arg:
             try:
                 arg = float(arg)
                 if arg < 40008000:
-                    raise ValueError("Celestial Sphere Radius must be greater than 40,008,000 meters")
+                    raise ValueError("Celestial Shell Radius must be greater than 40,008,000 meters")
             except (TypeError, ValueError):
                 print("Invalid radius entered. Radius must be greater than 40,008,000 meters")
             else:
-                self.celestial_sphere_radius = arg
+                self.celestial_shell_radius = arg
 
 
-        print("Radius of Celestial Sphere: "+str(self.celestial_sphere_radius))
+        print("Radius of Celestial Shell:"+str(self.celestial_shell_radius)+" meters")
 
 
 
@@ -216,10 +219,10 @@ def get_location_data(filename, angleClass1=Latlon, angleClass2=Latlon, location
             if len(row) == 0 or row[0][:1] == '#':
                 continue
             if len(row) == 3:
-                data[row[0]] = locationClass(Degree(row[1]), Degree(row[2]))
+                data[row[0].strip()] = locationClass(Degree(row[1]), Degree(row[2]))
             elif len(row) == 7:
                 args = tuple(map(float, row[1:]))
-                data[row[0]] = locationClass(
+                data[row[0].strip()] = locationClass(
                         angleClass1(*args[0:3]), 
                         angleClass2(*args[3:6])
                 )

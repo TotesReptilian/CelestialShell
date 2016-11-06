@@ -16,9 +16,9 @@ class Location(SphereLocation):
     """
     def __init__(self, lat, lon):
         SphereLocation.__init__(self, lat, lon)
-        self.radius = float(lat) * METERS_PER_RADIAN_LAT
+        self.radius = (math.pi/2 - float(lat)) * METERS_PER_RADIAN_LAT
 
-    def vector(self):
+    def vector(self, gmst):
         """
         Location represented by vector. 
 
@@ -26,9 +26,18 @@ class Location(SphereLocation):
         North pole points along Z axis
 
         """
-        x = self.radius * math.sin(-1*self.lon.rad())
-        y = self.radius * math.cos(self.lon.rad())
+        x = - self.radius * math.sin(self.lon.rad() + gmst.rad())
+        y = self.radius * math.cos(self.lon.rad() + gmst.rad())
         return Vector3(x,y,0)
+
+    def distance(self, vector, gmst):
+        """
+        Calculate distance between this location and given vector. Vector should be given in a non-rotating celestial reference frame.
+
+        :param gmst: GMST angle of the earth
+        :param vector: 3D vector coordinates in a non-rotating celestial reference frame
+        """
+        return self.vector(gmst).multiply(-1).add(vector).length()
 
 
 class Star(StarLocation):
@@ -122,10 +131,10 @@ class Star(StarLocation):
 
         return Angle(azimuth)
 
-    def sphere_intercept(self, location, gmst, sphere_radius):
+    def shell_intercept(self, location, gmst, shell_radius):
 
         """
-        Raycast the star's light until it intersects with the celestial sphere at the given radius R.
+        Raycast the star's light until it intersects with the celestial shell at the given radius R.
 
         x^2 + y^2 + z^2 = R^2
         x = x_offset + x_direction*t
@@ -133,24 +142,24 @@ class Star(StarLocation):
         z = z_offset + z_direction*t
 
         1. Solve for t by combining above equations into a single quadratic equation.
-        2. Plug in t to solve for the x, y, and z coordinates on the celestial sphere.
+        2. Plug in t to solve for the x, y, and z coordinates on the celestial shell.
 
         """
 
         d = self.local_ray_direction(location, gmst) # unit vector representing direction of starlight ray (d for direction)
-        o = location.vector() # vector representing terestial origin of starlight ray (o for offset)
+        o = location.vector(gmst) # vector representing terestial origin of starlight ray (o for offset)
 
         # solve quadratic equation a*t^2 + b*t + c = 0
         a = d.x*d.x + d.y*d.y + d.z*d.z
         b = 2*(o.x*d.x + o.y*d.y + o.z*d.z)
-        c = o.x*o.x + o.y*o.y + o.z*o.z - sphere_radius*sphere_radius
+        c = o.x*o.x + o.y*o.y + o.z*o.z - shell_radius*shell_radius
 
         sqrt = 0
 
         try:
             sqrt = math.sqrt(b*b - 4*a*c)
         except ValueError:
-            print("Invalid Celestial sphere radius: "+str(sphere_radius)+". Should be in meters and greater than 40,008,000 meters.")
+            print("Invalid Celestial shell radius: "+str(shell_radius)+". Should be in meters and greater than 40,008,000 meters.")
             raise 
 
         # apply the quadratic formula
@@ -159,13 +168,21 @@ class Star(StarLocation):
         if t < 0:
             t = (-1*b - sqrt)/(2*a)
 
-        # plug t back into the parameterized starlight ray to get intercept coordinates on the celestial sphere
+        # plug t back into the parameterized starlight ray to get intercept coordinates on the celestial shell
         x = o.x + d.x*t
         y = o.y + d.y*t
         z = o.z + d.z*t
 
         return Vector3(x,y,z)
-        
+
+    def distance(self, location, gmst, shell_radius):
+        """
+        Distance between shell intercept and given location
+        """
+
+        shell_intercept = self.shell_intercept(location, gmst, shell_radius)
+
+        return location.distance(shell_intercept, gmst)
 
 
 if __name__ == "__main__":
